@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class DssConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.dss"
+    verbose_name = "DSS (Decision Support System)"

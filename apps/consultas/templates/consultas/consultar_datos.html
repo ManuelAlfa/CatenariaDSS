@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consultar Datos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <link rel="shortcut icon" href="/img/logo.png" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <style>
+    .nav-link:hover { transform: scale(1.1); transition: transform 0.3s linear; }
+    @media (min-width: 992px) {
+      .navbar .container-fluid { position: relative; display: flex; align-items: center; }
+      .navbar .container-fluid .navbar-collapse {
+        position: absolute; left: 50%; transform: translateX(-50%);
+        flex-grow: 0; width: max-content;
+      }
+      .navbar-right-extra { margin-left: auto; display: flex; align-items: center; gap: 16px; padding-left: 24px; }
+    }
+  </style>
+</head>
+<body class="bg-light">
+    {% include "core/_nav.html" %}
+
+  <div class="container py-4">
+    <h1 class="h3 mb-4">Consultar datos</h1>
+    {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/consultar-datos" class="card shadow-sm p-4">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Tramo</label>
+          <select class="form-select" name="tramo" id="tramo-select">
+            <option value="">Selecciona tramo</option>
+            {% for t in tramos %}
+              <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Vía</label>
+          <select class="form-select" name="via" id="via-select">
+            <option value="">Selecciona vía</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Tipo de búsqueda</label>
+          <select class="form-select" name="tipo_busqueda">
+            <option value="mediciones">Mediciones</option>
+            <option value="inspecciones">Inspecciones</option>
+            <option value="formularios">Formularios</option>
+            <option value="incidencias">Incidencias</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Fecha inicio</label>
+          <input class="form-control" type="date" name="fecha_inicio">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fecha fin</label>
+          <input class="form-control" type="date" name="fecha_fin">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">KM inicio</label>
+          <input class="form-control" type="number" step="0.001" name="pto_km_ini">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">KM fin</label>
+          <input class="form-control" type="number" step="0.001" name="pto_km_fin">
+        </div>
+      </div>
+
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Consultar</button>
+        <a href="/dss" class="btn btn-outline-secondary">Volver</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const tramoSelect = document.getElementById('tramo-select');
+    const viaSelect = document.getElementById('via-select');
+    tramoSelect?.addEventListener('change', async () => {
+      const tramo = tramoSelect.value;
+      viaSelect.innerHTML = '<option value="">Selecciona vía</option>';
+      if (!tramo) return;
+      const res = await fetch(`/obtener_vias?tramo=${encodeURIComponent(tramo)}`);
+      const data = await res.json();
+      (data.vias || []).forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        viaSelect.appendChild(opt);
+      });
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>
+

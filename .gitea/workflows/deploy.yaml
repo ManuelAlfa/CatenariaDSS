@@ -1,0 +1,40 @@
+name: Despliegue Solutia
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Actualizar y Reiniciar
+        run: |
+          # 1. Instalar herramientas necesarias en Alpine
+          apk update && apk add --no-cache curl git docker-cli docker-cli-compose
+          
+          # 2. Configuración de seguridad de Git (Evita errores de permisos en carpetas montadas)
+          git config --global --add safe.directory /home/ivan/servidor-solutia/apps/catenaria_django-main/catenarias
+          
+          # 3. Configuración de llaves de Cloudflare (Service Token)
+          # Usamos --replace-all para limpiar configuraciones de ejecuciones anteriores y evitar el error "multiple values"
+          git config --global --replace-all http."https://gitea.solutia.sbs/".extraHeader "CF-Access-Client-Id: f18b7719decbd393c329aa3f85751a5e.access"
+          git config --global --add http."https://gitea.solutia.sbs/".extraHeader "CF-Access-Client-Secret: e4fbe549cc66a88fdb20b649518be22e3115da7dbc8d23711b496732e74be0fd"
+
+          # 4. Entrar en la carpeta y actualizar código
+          cd /home/ivan/servidor-solutia/apps/catenaria_django-main/catenarias
+          
+          # Aseguramos que el origen sea HTTPS para que use las cabeceras de Cloudflare
+          git remote set-url origin https://gitea.solutia.sbs/Solutia-devs/catenarias_django.git
+          git reset --hard origin/main
+          
+          git reset --hard HEAD
+          
+          # Descargamos los cambios
+          git pull origin main
+          
+          # 5. Reiniciar la aplicación con Docker Compose
+          # Intentamos con el comando antiguo y el nuevo por compatibilidad
+       
+          docker-compose up -d --build catenaria-django || docker compose up -d --build catenaria-django

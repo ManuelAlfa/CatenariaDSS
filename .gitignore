@@ -1,0 +1,32 @@
+# --- Salida de gráficos Plotly (regenerados en runtime) ---
+gauges_output.html
+incidencias.html
+
+# --- Logs de scripts ---
+*.log
+
+# --- Variables de entorno ---
+*.env
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# --- Django ---
+db.sqlite3
+staticfiles/
+media/
+
+# --- Datos exportados de Couchbase (regenerados con scripts/exportar_couchbase.py) ---
+db_datos/
+
+# --- IDE ---
+.idea/
+.vscode/
+
+# --- Sistema ---
+.DS_Store
+Thumbs.db
+infraestructura_catenaria/

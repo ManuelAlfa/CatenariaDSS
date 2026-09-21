@@ -1,0 +1,40 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-primary py-2">
+  <div class="container-fluid d-flex flex-wrap align-items-center gap-2">
+
+    <a class="navbar-brand text-white d-flex align-items-center m-0 me-2" href="/entrada">
+      <img src="/img/logo.png" alt="logo" width="80" height="40">
+    </a>
+
+    <button class="navbar-toggler order-1 ms-auto" type="button"
+            data-bs-toggle="collapse" data-bs-target="#navMainPrincipal"
+            aria-controls="navMainPrincipal" aria-expanded="false"
+            aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse order-3 order-lg-2 flex-grow-1 justify-content-lg-center"
+         id="navMainPrincipal">
+      <ul class="navbar-nav gap-lg-3 my-2 my-lg-0">
+        <li class="nav-item"><a class="nav-link text-white" href="/entrada?from=nav">Inicio</a></li>
+        <li class="nav-item"><a class="nav-link text-white" href="/configuracion">Configuración</a></li>
+        <li class="nav-item"><a class="nav-link text-white" href="/dss">DSS</a></li>
+        <li class="nav-item"><a class="nav-link text-white" href="/kpi-kgi">Sistemas de KPI / KGI</a></li>
+        <li class="nav-item"><a class="nav-link text-white" href="/alertas">Alertas</a></li>
+      </ul>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 order-2 order-lg-3 ms-lg-auto flex-shrink-0">
+      <img src="/img/solutia.png" alt="solutia" style="height:36px;width:auto;">
+      <a href="/logout" class="btn btn-outline-light btn-sm">Cerrar sesión</a>
+    </div>
+
+  </div>
+</nav>
+<style>
+  .navbar .nav-link { transition: transform 0.2s linear; white-space: nowrap; }
+  .navbar .nav-link:hover { transform: scale(1.06); }
+  @media (max-width: 991.98px) {
+    .navbar #navMainPrincipal { width: 100%; }
+    .navbar #navMainPrincipal .navbar-nav { gap: .25rem; }
+  }
+</style>

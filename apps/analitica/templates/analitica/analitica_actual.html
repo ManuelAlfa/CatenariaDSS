@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analítica Actual</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="shortcut icon" href="/img/logo.png" type="image/x-icon">
+  <style>
+    .nav-link:hover { transform: scale(1.1); transition: transform 0.3s linear; }
+    .navbar-nav .nav-link { display: flex; align-items: center; text-align: center; min-height: 40px; }
+    .navbar-nav { gap: 0.75rem; }
+    @media (min-width: 992px) {
+      .navbar .container-fluid { position: relative; display: flex; align-items: center; }
+      .navbar .container-fluid .navbar-collapse {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        flex-grow: 0;
+        width: max-content;
+      }
+      .navbar-right-extra {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding-left: 24px;
+      }
+    }
+    .card-body {
+      height: 1000px;
+    }
+    /* Solo aplicar la altura fija al card-body principal de la pestaña estándar */
+    #tab-pane-estandar .card-body { height: auto; }
+    .dashboard-panel {
+      border: 1px solid #dee2e6;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+    }
+    .dashboard-panel iframe {
+      width: 100%;
+      height: 360px;
+      border: 0;
+    }
+    /* ----- Comparador avanzado (slider) ----- */
+    .adv-slider-wrap {
+      position: relative;
+      background: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: 0.75rem;
+      box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+      overflow: hidden;
+    }
+    .adv-track {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+    .adv-track::-webkit-scrollbar { display: none; }
+    .adv-track { -ms-overflow-style: none; scrollbar-width: none; }
+    .adv-slide {
+      flex: 0 0 100%;
+      min-width: 100%;
+      scroll-snap-align: start;
+      padding: 1.25rem 1.25rem 1.25rem;
+      box-sizing: border-box;
+    }
+    .adv-slide-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+      margin-bottom: .75rem;
+    }
+    .adv-slide-head .panel-title {
+      font-weight: 600;
+      font-size: 1rem;
+      margin: 0;
+      color: #495057;
+    }
+    .adv-slide-grid {
+      display: grid;
+      grid-template-columns: minmax(260px, 320px) 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (max-width: 991px) {
+      .adv-slide-grid { grid-template-columns: 1fr; }
+    }
+    .adv-slide-form {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: .5rem;
+      padding: .85rem;
+    }
+    .adv-slide .dashboard-panel iframe {
+      height: 480px;
+    }
+    .adv-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.95);
+      border: 1px solid #dee2e6;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      box-shadow: 0 .25rem .5rem rgba(0,0,0,.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0d6efd;
+      font-size: 1.25rem;
+      cursor: pointer;
+      z-index: 5;
+      transition: background-color .15s, transform .15s;
+    }
+    .adv-nav-btn:hover:not(:disabled) {
+      background: #0d6efd;
+      color: #fff;
+      transform: translateY(-50%) scale(1.05);
+    }
+    .adv-nav-btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+    .adv-nav-prev { left: .5rem; }
+    .adv-nav-next { right: .5rem; }
+    .adv-dots {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: .35rem;
+      padding: .75rem;
+      background: #f8f9fa;
+      border-top: 1px solid #dee2e6;
+    }
+    .adv-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ced4da;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: background-color .15s, transform .15s;
+    }
+    .adv-dot:hover { background: #adb5bd; }
+    .adv-dot.active {
+      background: #0d6efd;
+      transform: scale(1.3);
+    }
+    .adv-empty {
+      text-align: center;
+      color: #6c757d;
+      padding: 3rem 1rem;
+    }
+    .nav-tabs .nav-link { font-weight: 500; }
+  </style>
+</head>
+<body class="bg-light">
+    {% include "core/_nav.html" %}
+
+  <div class="container-fluid py-4 px-3 px-lg-4">
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+      {{ error }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    {% if fecha_msg %}
+    <div class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+      {{ fecha_msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+          <h1 class="h4 mb-2 mb-md-0">Analítica actual (Grafana)</h1>
+          <div class="d-flex gap-2">
+            <a class="btn btn-outline-primary" href="/dss">Volver</a>
+          </div>
+        </div>
+
+        <ul class="nav nav-tabs mb-3" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-estandar" data-bs-toggle="tab"
+                    data-bs-target="#tab-pane-estandar" type="button" role="tab"
+                    aria-controls="tab-pane-estandar" aria-selected="true">
+              <i class="bi bi-grid-3x3-gap me-1"></i> Comparación estándar
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-avanzado" data-bs-toggle="tab"
+                    data-bs-target="#tab-pane-avanzado" type="button" role="tab"
+                    aria-controls="tab-pane-avanzado" aria-selected="false">
+              <i class="bi bi-sliders me-1"></i> Comparador avanzado
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+
+          <!-- ============================ TAB ESTÁNDAR (3 paneles fijos) ============================ -->
+          <div class="tab-pane fade show active" id="tab-pane-estandar" role="tabpanel" aria-labelledby="tab-estandar">
+            <div class="d-flex justify-content-end mb-2">
+              <button id="btn-aplicar" class="btn btn-primary">
+                <i class="bi bi-arrow-repeat"></i> Aplicar filtros
+              </button>
+            </div>
+
+            <p class="text-muted mb-3">Los bloques controlan tramo/PK. En <strong>Fechas</strong>, por defecto se usa el rango completo de la BD (incidencias): desde la fecha más antigua hasta la más reciente.</p>
+
+            <input id="from" type="hidden" value="{{ grafana_from|default:'' }}">
+            <input id="to" type="hidden" value="{{ grafana_to|default:'' }}">
+            <div class="border rounded p-3 mb-3 bg-light-subtle">
+            <div class="mb-3">
+              <label for="magnitud-select" class="form-label fw-bold">Magnitud</label>
+                     <select id="magnitud-select" class="form-select" onchange="applyFilters()">
+                           <option value="descentramiento">Descentramiento</option>
+                           <option value="altura">Altura</option>
+                           <option value="contraflecha">Contraflecha</option>
+                     </select>
+            </div>
+              <h2 class="h6 mb-3">Fechas</h2>
+              <div class="row g-3">
+                <div class="col-12 col-xl-4">
+                  <div class="row g-2">
+                    <div class="col-12"><label class="form-label mb-1">Fecha ini 1 (YYYYMMDD)</label><input id="var-fi1" class="form-control" value="{{ fecha_min_ymd|default:'' }}" placeholder="Ej: 20251102"></div>
+                    <div class="col-12"><label class="form-label mb-1">Fecha fin 1 (YYYYMMDD)</label><input id="var-ff1" class="form-control" value="{{ fecha_max_ymd|default:'' }}" placeholder="Ej: 20251104"></div>
+                  </div>
+                </div>
+                <div class="col-12 col-xl-4">
+                  <div class="row g-2">
+                    <div class="col-12"><label class="form-label mb-1">Fecha ini 2 (YYYYMMDD)</label><input id="var-fi2" class="form-control" value="{{ fecha_min_ymd|default:'' }}" placeholder="Ej: 20251102"></div>
+                    <div class="col-12"><label class="form-label mb-1">Fecha fin 2 (YYYYMMDD)</label><input id="var-ff2" class="form-control" value="{{ fecha_max_ymd|default:'' }}" placeholder="Ej: 20251104"></div>
+                  </div>
+                </div>
+                <div class="col-12 col-xl-4">
+                  <div class="row g-2">
+                    <div class="col-12"><label class="form-label mb-1">Fecha ini 3 (YYYYMMDD)</label><input id="var-fi3" class="form-control" value="{{ fecha_min_ymd|default:'' }}" placeholder="Ej: 20251102"></div>
+                    <div class="col-12"><label class="form-label mb-1">Fecha fin 3 (YYYYMMDD)</label><input id="var-ff3" class="form-control" value="{{ fecha_max_ymd|default:'' }}" placeholder="Ej: 20251104"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-12 col-xl-4">
+                <div class="border rounded p-3 mb-3 bg-light-subtle">
+                  <h2 class="h6 mb-2">Grafico 1</h2>
+                  <div class="row g-2">
+                    <div class="col-12">
+                      <label class="form-label mb-1">Tramo 1</label>
+                      <select id="var-tramo1" class="form-select" data-default="110800020">
+                        <option value="">Selecciona tramo</option>
+                        {% for tramo in tramos %}
+                        <option value="{{ tramo }}">{{ tramo }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-6"><label class="form-label mb-1">PK ini 1</label><input id="var-pki1" class="form-control" value=""></div>
+                    <div class="col-6"><label class="form-label mb-1">PK fin 1</label><input id="var-pkf1" class="form-control" value=""></div>
+                  </div>
+                </div>
+                <div class="dashboard-panel">
+                  <iframe id="grafana-panel-1" title="Grafana panel 3" loading="lazy"></iframe>
+                </div>
+              </div>
+
+              <div class="col-12 col-xl-4">
+                <div class="border rounded p-3 mb-3 bg-light-subtle">
+                  <h2 class="h6 mb-2">Grafico 2 </h2>
+                  <div class="row g-2">
+                    <div class="col-12">
+                      <label class="form-label mb-1">Tramo 2</label>
+                      <select id="var-tramo2" class="form-select" data-default="011000120">
+                        <option value="">Selecciona tramo</option>
+                        {% for tramo in tramos %}
+                        <option value="{{ tramo }}">{{ tramo }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-6"><label class="form-label mb-1">PK ini 2</label><input id="var-pki2" class="form-control" value=""></div>
+                    <div class="col-6"><label class="form-label mb-1">PK fin 2</label><input id="var-pkf2" class="form-control" value=""></div>
+                  </div>
+                </div>
+                <div class="dashboard-panel">
+                  <iframe id="grafana-panel-2" title="Grafana panel 4" loading="lazy"></iframe>
+                </div>
+              </div>
+
+              <div class="col-12 col-xl-4">
+                <div class="border rounded p-3 mb-3 bg-light-subtle">
+                  <h2 class="h6 mb-2">Grafico 3</h2>
+                  <div class="row g-2">
+                    <div class="col-12">
+                      <label class="form-label mb-1">Tramo 3</label>
+                      <select id="var-tramo3" class="form-select" data-default="110800040">
+                        <option value="">Selecciona tramo</option>
+                        {% for tramo in tramos %}
+                        <option value="{{ tramo }}">{{ tramo }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-6"><label class="form-label mb-1">PK ini 3</label><input id="var-pki3" class="form-control" value=""></div>
+                    <div class="col-6"><label class="form-label mb-1">PK fin 3</label><input id="var-pkf3" class="form-control" value=""></div>
+                  </div>
+                </div>
+                <div class="dashboard-panel">
+                  <iframe id="grafana-panel-3" title="Grafana panel 5" loading="lazy"></iframe>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- ============================ /TAB ESTÁNDAR ============================ -->
+
+
+          <!-- ============================ TAB AVANZADO (slider) ============================ -->
+          <div class="tab-pane fade" id="tab-pane-avanzado" role="tabpanel" aria-labelledby="tab-avanzado">
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+              <div>
+                <h2 class="h5 mb-1">Comparador avanzado</h2>
+                <p class="text-muted mb-0 small">
+                  Navega entre paneles con las flechas. Cada panel tiene su propio tramo, PK, fechas y tipo de gráfico.
+                  Tu configuración se guarda automáticamente en este navegador.
+                </p>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <span class="badge bg-light text-dark align-self-center" id="adv-counter">Panel 0 / 0</span>
+                <button id="adv-add" class="btn btn-success" type="button">
+                  <i class="bi bi-plus-circle me-1"></i> Añadir panel
+                </button>
+                <button id="adv-apply-all" class="btn btn-primary" type="button">
+                  <i class="bi bi-arrow-repeat"></i> Aplicar a todos
+                </button>
+                <button id="adv-reset" class="btn btn-outline-danger" type="button">
+                  <i class="bi bi-trash"></i> Resetear
+                </button>
+              </div>
+            </div>
+
+            <div class="adv-slider-wrap">
+              <button id="adv-prev" class="adv-nav-btn adv-nav-prev" type="button" title="Anterior" aria-label="Anterior">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              <button id="adv-next" class="adv-nav-btn adv-nav-next" type="button" title="Siguiente" aria-label="Siguiente">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+
+              <div id="adv-track" class="adv-track">
+                <!-- Slides dinámicos se inyectan aquí -->
+              </div>
+
+              <div id="adv-empty" class="adv-empty d-none">
+                <i class="bi bi-plus-circle display-6 d-block mb-2"></i>
+                <p class="mb-0">Sin paneles todavía. Pulsa <strong>"Añadir panel"</strong> para empezar.</p>
+              </div>
+
+              <div id="adv-dots" class="adv-dots"></div>
+            </div>
+
+            <!-- Plantilla de slide (oculta) -->
+            <template id="adv-panel-template">
+              <div class="adv-slide">
+                <div class="adv-slide-head">
+                  <h3 class="panel-title">Panel <span class="panel-index">#</span></h3>
+                  <div class="d-flex gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-primary adv-apply" title="Aplicar filtros a este panel">
+                      <i class="bi bi-arrow-repeat"></i> Aplicar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary adv-duplicate" title="Duplicar panel">
+                      <i class="bi bi-files"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger adv-remove" title="Eliminar panel">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="adv-slide-grid">
+                  <div class="adv-slide-form">
+                    <div class="row g-2">
+                      <div class="col-12">
+                        <label class="form-label mb-1 small">Tipo de gráfico</label>
+                        <!--<select class="form-select form-select-sm adv-panelid">
+                          <option value="panel-3">Gráfico A (panel-3)</option>
+                          <option value="panel-4">Gráfico B (panel-4)</option>
+                          <option value="panel-5">Gráfico C (panel-5)</option>
+                        </select>!-->
+                        <select class="form-select form-select-sm adv-panelid">
+                              <option value="1">Descentramiento</option>
+                              <option value="2">Altura</option>
+                              <option value="3">Contraflecha</option>
+                       </select>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label mb-1 small">Tramo</label>
+                        <select class="form-select form-select-sm adv-tramo">
+                          <option value="">Selecciona tramo</option>
+                          {% for tramo in tramos %}
+                          <option value="{{ tramo }}">{{ tramo }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label mb-1 small">PK ini</label>
+                        <input type="text" class="form-control form-control-sm adv-pki" value="">
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label mb-1 small">PK fin</label>
+                        <input type="text" class="form-control form-control-sm adv-pkf" value="">
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label mb-1 small">Fecha ini (YYYYMMDD)</label>
+                        <input type="text" class="form-control form-control-sm adv-fi" value="" placeholder="Ej: 20251102">
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label mb-1 small">Fecha fin (YYYYMMDD)</label>
+                        <input type="text" class="form-control form-control-sm adv-ff" value="" placeholder="Ej: 20251104">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="dashboard-panel">
+                    <iframe class="adv-iframe" title="Grafana panel" loading="lazy"></iframe>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+          </div>
+          <!-- ============================ /TAB AVANZADO ============================ -->
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ===========================================================
+       Configuración compartida
+       =========================================================== */
+    const grafanaBase = "{{ grafana_base_url|default:'https://grafana.catenaria-lab.com/d-solo/ad2q78k/catenaria' }}";
+    const defaultFechaIni = "{{ fecha_min_ymd|default:'' }}";
+    const defaultFechaFin = "{{ fecha_max_ymd|default:'' }}";
+
+    function parseYyyyMmDd(value, endOfDay) {
+      const raw = (value || "").trim();
+      if (!/^\d{8}$/.test(raw)) return null;
+      const year = Number(raw.slice(0, 4));
+      const month = Number(raw.slice(4, 6)) - 1;
+      const day = Number(raw.slice(6, 8));
+      const hour = endOfDay ? 23 : 0;
+      const minute = endOfDay ? 59 : 0;
+      const second = endOfDay ? 59 : 0;
+      return new Date(Date.UTC(year, month, day, hour, minute, second, endOfDay ? 999 : 0));
+    }
+
+    /* ===========================================================
+       TAB ESTÁNDAR (lógica original, intacta)
+       =========================================================== */
+    (function initEstandar() {
+      //const panelIds = ["panel-3", "panel-4", "panel-5"];
+      const panelIds = [1, 2, 3];
+      function getValue(id) {
+        return encodeURIComponent((document.getElementById(id)?.value || "").trim());
+      }
+
+      const MAGNITUD_PANEL_ID = {
+  descentramiento: 1,
+  altura: 2,
+  contraflecha: 3
+};
+/*
+function buildPanelQuery(idx) {
+  return [
+    "orgId=1",
+    "timezone=browser",
+    `from=${getValue("from")}`,
+    `to=${getValue("to")}`,
+    `var-tramo${idx}=${getValue(`var-tramo${idx}`)}`,
+    `var-pki${idx}=${getValue(`var-pki${idx}`)}`,
+    `var-pkf${idx}=${getValue(`var-pkf${idx}`)}`,
+    `var-fi${idx}=${getValue(`var-fi${idx}`)}`,
+    `var-ff${idx}=${getValue(`var-ff${idx}`)}`,
+    "var-query0="
+  ].join("&");
+}*/
+function buildPanelQuery(idx) {
+  return [
+    "orgId=1",
+    "timezone=browser",
+    `from=${getValue("from")}`,
+    `to=${getValue("to")}`,
+    `var-tramo1=${getValue(`var-tramo${idx}`)}`,
+    `var-pki1=${getValue(`var-pki${idx}`)}`,
+    `var-pkf1=${getValue(`var-pkf${idx}`)}`,
+    `var-fi1=${getValue(`var-fi${idx}`)}`,
+    `var-ff1=${getValue(`var-ff${idx}`)}`,
+    "var-query0="
+  ].join("&");
+}
+
+
+
+/*
+      function buildCommonQuery() {
+        return [
+          "orgId=1",
+          "timezone=browser",
+          `from=${getValue("from")}`,
+          `to=${getValue("to")}`,
+          `var-tramo1=${getValue("var-tramo1")}`,
+          `var-pki1=${getValue("var-pki1")}`,
+          `var-pkf1=${getValue("var-pkf1")}`,
+          `var-fi1=${getValue("var-fi1")}`,
+          `var-ff1=${getValue("var-ff1")}`,
+          `var-tramo2=${getValue("var-tramo2")}`,
+          `var-pki2=${getValue("var-pki2")}`,
+          `var-pkf2=${getValue("var-pkf2")}`,
+          `var-fi2=${getValue("var-fi2")}`,
+          `var-ff2=${getValue("var-ff2")}`,
+          `var-tramo3=${getValue("var-tramo3")}`,
+          `var-pki3=${getValue("var-pki3")}`,
+          `var-pkf3=${getValue("var-pkf3")}`,
+          `var-fi3=${getValue("var-fi3")}`,
+          `var-ff3=${getValue("var-ff3")}`,
+          "var-query0="
+        ].join("&");
+      }*/
+
+      function syncGlobalDatesFromThreeRanges() {
+        const starts = [
+          parseYyyyMmDd(document.getElementById("var-fi1").value, false),
+          parseYyyyMmDd(document.getElementById("var-fi2").value, false),
+          parseYyyyMmDd(document.getElementById("var-fi3").value, false)
+        ].filter(Boolean);
+
+        const ends = [
+          parseYyyyMmDd(document.getElementById("var-ff1").value, true),
+          parseYyyyMmDd(document.getElementById("var-ff2").value, true),
+          parseYyyyMmDd(document.getElementById("var-ff3").value, true)
+        ].filter(Boolean);
+
+        if (starts.length > 0) {
+          const minStart = new Date(Math.min(...starts.map((d) => d.getTime())));
+          document.getElementById("from").value = minStart.toISOString();
+        }
+        if (ends.length > 0) {
+          const maxEnd = new Date(Math.max(...ends.map((d) => d.getTime())));
+          document.getElementById("to").value = maxEnd.toISOString();
+        }
+      }
+      function applyFilters() {
+        syncGlobalDatesFromThreeRanges();
+        const magnitud = document.getElementById("magnitud-select").value;
+        const panelId = MAGNITUD_PANEL_ID[magnitud] || MAGNITUD_PANEL_ID.descentramiento;
+
+       document.getElementById("grafana-panel-1").src = `${grafanaBase}?${buildPanelQuery(1)}&panelId=${panelId}`;
+       document.getElementById("grafana-panel-2").src = `${grafanaBase}?${buildPanelQuery(2)}&panelId=${panelId}`;
+       document.getElementById("grafana-panel-3").src = `${grafanaBase}?${buildPanelQuery(3)}&panelId=${panelId}`;
+      }
+/*
+      function applyFilters() {
+        syncGlobalDatesFromThreeRanges();
+        const commonQuery = buildCommonQuery();
+        document.getElementById("grafana-panel-1").src = `${grafanaBase}?${commonQuery}&panelId=${panelIds[0]}`;
+        document.getElementById("grafana-panel-2").src = `${grafanaBase}?${commonQuery}&panelId=${panelIds[1]}`;
+        document.getElementById("grafana-panel-3").src = `${grafanaBase}?${commonQuery}&panelId=${panelIds[2]}`;
+      }
+*/
+      function applyDefaultSelections() {
+        ["var-tramo1", "var-tramo2", "var-tramo3"].forEach((id, index) => {
+          const select = document.getElementById(id);
+          const defaults = ["110800020", "011000120", "110800040"];
+          const preferred = select.dataset.default || defaults[index];
+          if (preferred) {
+            select.value = preferred;
+          }
+        });
+      }
+
+      document.getElementById("btn-aplicar").addEventListener("click", applyFilters);
+      applyDefaultSelections();
+      applyFilters();
+    })();
+
+    /* ===========================================================
+       TAB AVANZADO (slider con paneles dinámicos y persistencia)
+       =========================================================== */
+    (function initAvanzado() {
+      const STORAGE_KEY = "analitica_actual_avanzado_v1";
+      const MAX_PANELS = 12;
+      //const PANEL_DEFAULT = "panel-3";
+
+      // panel-3 -> índice de variable 1, panel-4 -> 2, panel-5 -> 3
+      //const PANEL_TO_INDEX = { "panel-3": 1, "panel-4": 2, "panel-5": 3 };
+
+      const PANEL_DEFAULT = "1"; // Descentramiento
+      const PANEL_TO_INDEX = { "1": 1, "2": 2, "3": 3 };
+            // panelId real -> índice de variable de tramo
+      const track = document.getElementById("adv-track");
+      const tpl = document.getElementById("adv-panel-template");
+      const btnAdd = document.getElementById("adv-add");
+      const btnApplyAll = document.getElementById("adv-apply-all");
+      const btnReset = document.getElementById("adv-reset");
+      const btnPrev = document.getElementById("adv-prev");
+      const btnNext = document.getElementById("adv-next");
+      const counter = document.getElementById("adv-counter");
+      const emptyHint = document.getElementById("adv-empty");
+      const dotsBox = document.getElementById("adv-dots");
+
+      let currentIndex = 0;
+
+      function getSlides() {
+        return Array.from(track.querySelectorAll(".adv-slide"));
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function saveState() {
+        const data = getSlides().map(readCard);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+          /* sin localStorage / quota: ignorar */
+        }
+      }
+
+      function readCard(slide) {
+        return {
+          panelId: slide.querySelector(".adv-panelid").value || PANEL_DEFAULT,
+          tramo: slide.querySelector(".adv-tramo").value || "",
+          pki: slide.querySelector(".adv-pki").value || "",
+          pkf: slide.querySelector(".adv-pkf").value || "",
+          fi: slide.querySelector(".adv-fi").value || "",
+          ff: slide.querySelector(".adv-ff").value || ""
+        };
+      }
+
+      function setCardValues(slide, data) {
+        slide.querySelector(".adv-panelid").value = data.panelId || PANEL_DEFAULT;
+        slide.querySelector(".adv-tramo").value = data.tramo || "";
+        slide.querySelector(".adv-pki").value = data.pki || "";
+        slide.querySelector(".adv-pkf").value = data.pkf || "";
+        slide.querySelector(".adv-fi").value = data.fi || defaultFechaIni;
+        slide.querySelector(".adv-ff").value = data.ff || defaultFechaFin;
+      }
+
+     function buildPanelUrl(data) {
+     const panelId = data.panelId || PANEL_DEFAULT;
+     const idx = 1; // Grafana solo define var-tramo1/pki1/pkf1/fi1/ff1
+
+     const fi = data.fi || "";
+     const ff = data.ff || "";
+     const fiDate = parseYyyyMmDd(fi, false);
+     const ffDate = parseYyyyMmDd(ff, true);
+     const fromIso = fiDate ? fiDate.toISOString() : "";
+     const toIso = ffDate ? ffDate.toISOString() : "";
+
+     const enc = (v) => encodeURIComponent((v || "").trim());
+
+     // Todos los paneles usan siempre el juego de variables tramo1/pki1/pkf1/fi1/ff1
+     const params = [
+       "orgId=1",
+       "timezone=browser",
+       `from=${enc(fromIso)}`,
+       `to=${enc(toIso)}`,
+       `var-tramo${idx}=${enc(data.tramo)}`,
+       `var-pki${idx}=${enc(data.pki)}`,
+       `var-pkf${idx}=${enc(data.pkf)}`,
+       `var-fi${idx}=${enc(fi)}`,
+       `var-ff${idx}=${enc(ff)}`,
+       "var-query0=",
+       `panelId=${panelId}`
+      ];
+    return `${grafanaBase}?${params.join("&")}`;
+    }
+
+      function applyCard(slide) {
+        const data = readCard(slide);
+        slide.querySelector(".adv-iframe").src = buildPanelUrl(data);
+        saveState();
+      }
+
+      function applyAll() {
+        getSlides().forEach(applyCard);
+      }
+
+      function goTo(index, smooth) {
+        const slides = getSlides();
+        if (slides.length === 0) return;
+        const clamped = Math.max(0, Math.min(index, slides.length - 1));
+        currentIndex = clamped;
+        const slide = slides[clamped];
+        // scrollLeft directo es más fiable que scrollIntoView dentro de tabs ocultos
+        track.scrollTo({
+          left: slide.offsetLeft,
+          behavior: smooth === false ? "auto" : "smooth"
+        });
+        refreshUi();
+      }
+
+      function refreshUi() {
+        const slides = getSlides();
+        const n = slides.length;
+
+        slides.forEach((s, i) => {
+          s.querySelector(".panel-index").textContent = String(i + 1);
+        });
+
+        // Contador
+        counter.textContent = n === 0
+          ? "Panel 0 / 0"
+          : `Panel ${currentIndex + 1} / ${n}`;
+
+        // Botones
+        btnAdd.disabled = n >= MAX_PANELS;
+        btnPrev.disabled = currentIndex <= 0 || n === 0;
+        btnNext.disabled = currentIndex >= n - 1 || n === 0;
+
+        // Mostrar/ocultar wrapper vacío
+        emptyHint.classList.toggle("d-none", n > 0);
+        track.classList.toggle("d-none", n === 0);
+        btnPrev.style.display = n === 0 ? "none" : "";
+        btnNext.style.display = n === 0 ? "none" : "";
+
+        // Dots
+        dotsBox.innerHTML = "";
+        if (n > 1) {
+          for (let i = 0; i < n; i++) {
+            const dot = document.createElement("button");
+            dot.type = "button";
+            dot.className = "adv-dot" + (i === currentIndex ? " active" : "");
+            dot.setAttribute("aria-label", `Ir a panel ${i + 1}`);
+            dot.addEventListener("click", () => goTo(i, true));
+            dotsBox.appendChild(dot);
+          }
+          dotsBox.style.display = "";
+        } else {
+          dotsBox.style.display = "none";
+        }
+      }
+
+      function bindCardEvents(slide) {
+        slide.querySelector(".adv-apply").addEventListener("click", () => applyCard(slide));
+
+        slide.querySelector(".adv-remove").addEventListener("click", () => {
+          const slides = getSlides();
+          const idx = slides.indexOf(slide);
+          slide.remove();
+          const newSlides = getSlides();
+          if (newSlides.length === 0) {
+            currentIndex = 0;
+          } else if (idx >= newSlides.length) {
+            currentIndex = newSlides.length - 1;
+          } else {
+            currentIndex = idx;
+          }
+          refreshUi();
+          if (newSlides.length > 0) goTo(currentIndex, false);
+          saveState();
+        });
+
+        slide.querySelector(".adv-duplicate").addEventListener("click", () => {
+          if (getSlides().length >= MAX_PANELS) return;
+          const data = readCard(slide);
+          const newSlide = createCard(data, true, /*insertAfter*/ slide);
+          // ir al nuevo slide
+          currentIndex = getSlides().indexOf(newSlide);
+          refreshUi();
+          goTo(currentIndex, true);
+          saveState();
+        });
+
+        // Auto-guardado al editar (sin recargar iframe — se hace al pulsar Aplicar)
+        slide.querySelectorAll("input, select").forEach((el) => {
+          el.addEventListener("change", saveState);
+          if (el.tagName === "INPUT") {
+            el.addEventListener("blur", saveState);
+          }
+        });
+
+        // Enter en cualquier input dispara aplicar a este panel
+        slide.querySelectorAll("input").forEach((el) => {
+          el.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              applyCard(slide);
+            }
+          });
+        });
+      }
+
+      function createCard(data, autoApply, insertAfter) {
+        const fragment = tpl.content.cloneNode(true);
+        const slide = fragment.querySelector(".adv-slide");
+        setCardValues(slide, data || {});
+        bindCardEvents(slide);
+        if (insertAfter && insertAfter.parentNode === track) {
+          insertAfter.after(slide);
+        } else {
+          track.appendChild(slide);
+        }
+        if (autoApply !== false) {
+          applyCard(slide);
+        }
+        return slide;
+      }
+
+      function getDefaultDataForNew() {
+        // Si ya hay paneles, clona el último para que el usuario solo cambie deltas
+        const slides = getSlides();
+        const last = slides[slides.length - 1];
+        if (last) return readCard(last);
+        return {
+          panelId: PANEL_DEFAULT,
+          tramo: "110800020",
+          pki: "",
+          pkf: "",
+          fi: defaultFechaIni,
+          ff: defaultFechaFin
+        };
+      }
+
+      // Detectar slide actual al hacer scroll manual (drag/swipe)
+      let scrollTimer = null;
+      track.addEventListener("scroll", () => {
+        if (scrollTimer) clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+          const slides = getSlides();
+          if (slides.length === 0) return;
+          const trackRect = track.getBoundingClientRect();
+          let bestIdx = 0;
+          let bestDist = Infinity;
+          slides.forEach((s, i) => {
+            const r = s.getBoundingClientRect();
+            const dist = Math.abs(r.left - trackRect.left);
+            if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+          });
+          if (bestIdx !== currentIndex) {
+            currentIndex = bestIdx;
+            refreshUi();
+          }
+        }, 120);
+      });
+
+      btnAdd.addEventListener("click", () => {
+        if (getSlides().length >= MAX_PANELS) return;
+        const newSlide = createCard(getDefaultDataForNew(), true);
+        currentIndex = getSlides().length - 1;
+        refreshUi();
+        goTo(currentIndex, true);
+        saveState();
+      });
+
+      btnPrev.addEventListener("click", () => goTo(currentIndex - 1, true));
+      btnNext.addEventListener("click", () => goTo(currentIndex + 1, true));
+
+      btnApplyAll.addEventListener("click", applyAll);
+
+      btnReset.addEventListener("click", () => {
+        if (!confirm("Esto eliminará todos los paneles del comparador avanzado. ¿Continuar?")) return;
+        track.innerHTML = "";
+        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        currentIndex = 0;
+        refreshUi();
+      });
+
+      // Teclado: flechas izquierda/derecha cuando el tab avanzado está activo
+      document.addEventListener("keydown", (e) => {
+        const advTab = document.getElementById("tab-pane-avanzado");
+        if (!advTab || !advTab.classList.contains("active")) return;
+        // No interferir si el foco está en un input/select/textarea
+        const tag = (document.activeElement?.tagName || "").toLowerCase();
+        if (["input", "select", "textarea"].includes(tag)) return;
+        if (e.key === "ArrowLeft") { e.preventDefault(); goTo(currentIndex - 1, true); }
+        else if (e.key === "ArrowRight") { e.preventDefault(); goTo(currentIndex + 1, true); }
+      });
+
+      // Cuando el tab avanzado se hace visible, reposicionar el slider en el slide actual
+      // (scroll-snap puede desincronizarse al estar oculto)
+      const advTabBtn = document.getElementById("tab-avanzado");
+      if (advTabBtn) {
+        advTabBtn.addEventListener("shown.bs.tab", () => {
+          if (getSlides().length > 0) goTo(currentIndex, false);
+        });
+      }
+
+      // Inicialización: restaurar estado o crear 1 panel de ejemplo
+      const saved = loadState();
+      if (saved && saved.length > 0) {
+        saved.slice(0, MAX_PANELS).forEach((d) => createCard(d, false));
+        applyAll();
+      } else {
+        createCard({
+          panelId: PANEL_DEFAULT,
+          tramo: "110800020",
+          pki: "",
+          pkf: "",
+          fi: defaultFechaIni,
+          ff: defaultFechaFin
+        }, true);
+      }
+      currentIndex = 0;
+      refreshUi();
+    })();
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>

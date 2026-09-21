@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analítica Predictiva — Catenaria</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="shortcut icon" href="/img/logo.png" type="image/x-icon">
+  <style>
+    :root {
+      --brand-primary: #0b4f8a;
+      --brand-secondary: #1d8f6f;
+      --bg-soft: #f5f7fb;
+      --text-main: #1f2a37;
+      --shadow: 0 8px 26px rgba(11,79,138,0.10);
+    }
+    body {
+      background: radial-gradient(circle at 8% 12%, rgba(29,143,111,0.11), transparent 42%),
+                  radial-gradient(circle at 88% 16%, rgba(240,154,66,0.12), transparent 38%),
+                  linear-gradient(180deg, #fbfcfe 0%, #f3f6fb 100%);
+      color: var(--text-main); min-height: 100vh; font-size: 0.92rem;
+    }
+    .nav-link:hover { transform: scale(1.07); transition: transform .22s; }
+    .navbar-nav .nav-link { display: flex; align-items: center; min-height: 40px; }
+    .navbar-nav { gap: .75rem; }
+    @media (min-width:992px) {
+      .navbar .container-fluid { position: relative; display: flex; align-items: center; }
+      .navbar .container-fluid .navbar-collapse { position: absolute; left:50%; transform:translateX(-50%); flex-grow:0; width:max-content; }
+      .navbar-right-extra { margin-left:auto; display:flex; align-items:center; gap:16px; padding-left:24px; }
+    }
+    .predictive-shell { border:0; border-radius:18px; box-shadow:var(--shadow); background:#fff; overflow:hidden; }
+    .hero-band {
+      background: linear-gradient(120deg, #0b4f8a 0%, #1a6fa8 42%, #1d8f6f 100%);
+      color:#fff; padding:1.2rem 1.5rem;
+    }
+    .hero-band h1 { font-size:clamp(1.05rem,2.1vw,1.7rem); font-weight:700; margin-bottom:.2rem; }
+    .hero-band p  { margin:0; color:rgba(255,255,255,.88); font-size:.85rem; }
+
+    /* ── Wizard steps ── */
+    .wizard-step { border:1px solid #dbe4ef; border-radius:14px; background:var(--bg-soft); padding:1.1rem 1.3rem; transition: opacity .3s, filter .3s; }
+    .wizard-step.step-locked { opacity:.45; pointer-events:none; filter:grayscale(.35); }
+    .wizard-step.step-done { opacity:.75; pointer-events:none; filter:grayscale(.15); }
+    .step-badge {
+      width:26px; height:26px; border-radius:50%; font-size:.75rem; font-weight:700; flex-shrink:0;
+      display:inline-flex; align-items:center; justify-content:center;
+      background: var(--brand-primary); color:#fff; transition: background .3s;
+    }
+    .step-badge.done { background:#1f9d55; }
+    .step-badge.active { background: var(--brand-primary); box-shadow: 0 0 0 3px rgba(11,79,138,.25); }
+    .step-title { font-size:.95rem; font-weight:600; }
+    .connector { width:2px; background:#dbe4ef; min-height:18px; margin:0 12px; }
+
+    #results-section { display:none; }
+    #results-section.visible { display:block; animation:fadeInUp .45s ease both; }
+    @keyframes fadeInUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .fade-in-up { animation:fadeInUp .5s ease both; }
+
+    /* ── Category tabs ── */
+    .cat-tab-nav .nav-link {
+      font-size:.84rem; font-weight:600; color:#4a5568;
+      border-radius:10px 10px 0 0; border:1px solid #dce4ef; border-bottom:none;
+      margin-right:3px; padding:.5rem 1rem;
+      background:#f5f7fb;
+    }
+    .cat-tab-nav .nav-link.active {
+      background:#fff; color:var(--brand-primary);
+      border-color:#d0ddef; border-bottom-color:#fff;
+    }
+    .cat-tab-nav .nav-link:hover:not(.active) { background:#eaf2ff; color:var(--brand-primary); }
+
+    /* ── N-level color system ── */
+    .nivel-0 { --n-color: #2a9d8f; --n-bg: #eafaf5; --n-border: #2a9d8f; --n-text: #11663a; }
+    .nivel-1 { --n-color: #e8a838; --n-bg: #fff8ea; --n-border: #e8a838; --n-text: #8a5a00; }
+    .nivel-2 { --n-color: #e76f51; --n-bg: #fff3ee; --n-border: #e76f51; --n-text: #8a2400; }
+    .nivel-3 { --n-color: #c0392b; --n-bg: #fde8e8; --n-border: #c0392b; --n-text: #7b241c; }
+    .nivel-4 { --n-color: #9b2226; --n-bg: #ffe8e8; --n-border: #9b2226; --n-text: #6b0000; }
+
+    .ind-card {
+      border:1px solid #e2e8f0; border-radius:12px;
+      background:#fff; padding:1rem 1.1rem;
+      transition: box-shadow .2s, border-color .2s;
+      height:100%; position:relative; overflow:hidden;
+    }
+    .ind-card:hover { box-shadow:0 4px 14px rgba(11,79,138,.10); }
+    .ind-card.has-alert { border-left:4px solid var(--n-color, #e2e8f0); }
+
+    .n-level-strip {
+      position:absolute; top:0; left:0; bottom:0; width:4px;
+    }
+    .ind-name { font-size:.85rem; font-weight:600; margin-bottom:.2rem; }
+    .ind-model { font-size:.68rem; color:#8898aa; display:block; margin-bottom:.3rem; }
+    .ind-row { display:flex; justify-content:space-between; align-items:baseline; gap:.5rem; padding:2px 0; }
+    .ind-label { font-size:.72rem; color:#65758b; }
+    .ind-value { font-size:1.05rem; font-weight:700; }
+    .ind-value-sm { font-size:.9rem; font-weight:600; }
+    .ind-value-lg { font-size:1.6rem; font-weight:800; line-height:1.2; }
+    .ind-date { font-size:.73rem; color:#65758b; }
+
+    .n-badge {
+      display:inline-block; border-radius:999px; padding:.1rem .5rem;
+      font-size:.7rem; font-weight:700; border:1px solid transparent;
+    }
+
+    .trend-up { color:#c05000; }
+    .trend-down { color:#11663a; }
+    .trend-flat { color:#555; }
+
+    /* Cursor de ayuda en cualquier elemento con tooltip */
+    [data-bs-toggle="tooltip"] { cursor: help; }
+
+    /* ── Skeleton loader ── */
+    @keyframes skeleton-shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skeleton-block {
+      background: linear-gradient(90deg, #e8edf5 25%, #f0f4fb 50%, #e8edf5 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.4s infinite;
+      border-radius: 6px;
+    }
+    .skeleton-card {
+      border: 1px solid #e2e8f0; border-radius: 12px;
+      padding: 1rem 1.1rem; background: #fff; height: 168px;
+    }
+
+    /* ── Category header ── */
+    .cat-header { border-bottom:2px solid #dce4ef; padding-bottom:.6rem; margin-bottom:1rem; }
+    .cat-header h3 { font-size:1rem; font-weight:700; margin:0; }
+    .cat-header small { font-size:.75rem; color:#8898aa; }
+
+    .section-label { font-size:.67rem; text-transform:uppercase; letter-spacing:.11em; color:#8898aa; font-weight:700; margin-bottom:.55rem; padding-left:.35rem; border-left:3px solid var(--brand-primary); }
+
+    /* ── History panel ── */
+    .history-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:1040; opacity:0; pointer-events:none; transition:opacity .25s; }
+    .history-backdrop.open { opacity:1; pointer-events:all; }
+    .history-panel {
+      position:fixed; top:0; right:-440px; width:min(440px,96vw); height:100vh;
+      background:#fff; z-index:1050; box-shadow:-8px 0 32px rgba(11,79,138,.18);
+      display:flex; flex-direction:column; transition:right .28s cubic-bezier(.4,0,.2,1);
+      overflow:hidden;
+    }
+    .history-panel.open { right:0; }
+    .history-panel .hp-header { background:var(--brand-primary); color:#fff; padding:.9rem 1.1rem; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+    .history-panel .hp-header h2 { font-size:1rem; font-weight:700; margin:0; }
+    .history-panel .hp-body { flex:1; overflow-y:auto; padding:.75rem; }
+    .history-item {
+      border:1px solid #e2e8f0; border-radius:10px; padding:.75rem; margin-bottom:.6rem;
+      cursor:pointer; transition:border-color .18s, box-shadow .18s;
+    }
+    .history-item:hover { border-color:var(--brand-primary); box-shadow:0 4px 14px rgba(11,79,138,.12); }
+    .history-item .hi-title { font-weight:600; font-size:.86rem; margin-bottom:.25rem; }
+    .history-item .hi-meta  { font-size:.73rem; color:#65758b; }
+    .history-item .hi-badges{ display:flex; gap:.3rem; flex-wrap:wrap; margin-top:.35rem; }
+    .info-pill { display:inline-block; background:#f0f4fa; border:1px solid #dce4ef; border-radius:7px; padding:.22rem .55rem; font-size:.75rem; color:#3c506a; font-weight:500; }
+    .info-pill strong { color:var(--brand-primary); }
+
+    .rec-card {
+      border-left:4px solid var(--brand-primary);
+      background:#f8fbff; border-radius:8px; padding:.7rem .9rem;
+      margin-bottom:.4rem; font-size:.86rem;
+    }
+
+    /* ── Bloques de cálculo (paso 2) ── */
+    .calc-block {
+      border:1px solid #dbe4ef; border-radius:12px; background:#fff;
+      padding:1rem 1.1rem; display:flex; flex-direction:column;
+    }
+    .calc-block-primary { border-top:3px solid var(--brand-primary); }
+    .calc-block-warning { border-top:3px solid #e8a838; }
+    .calc-icon { font-size:1.3rem; color:var(--brand-primary); flex-shrink:0; margin-top:.15rem; }
+    .calc-block-warning .calc-icon { color:#c87b00; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+{% include "core/_nav.html" %}
+
+<!-- HISTORY BACKDROP + PANEL -->
+<div class="history-backdrop" id="hist-backdrop"></div>
+<aside class="history-panel" id="hist-panel" aria-label="Historial de consultas">
+  <div class="hp-header">
+    <h2><i class="bi bi-clock-history me-2"></i>Historial de consultas</h2>
+    <button class="btn btn-sm btn-outline-light" id="hist-close"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="hp-body" id="hist-body">
+    <p class="text-muted text-center py-4" id="hist-empty">No hay consultas guardadas aún.</p>
+  </div>
+  <div class="p-2 border-top text-end">
+    <button class="btn btn-sm btn-outline-danger" id="hist-clear"><i class="bi bi-trash3 me-1"></i>Limpiar historial</button>
+  </div>
+</aside>
+
+<div class="container-fluid py-4 px-3 px-lg-4">
+  {% if error %}
+  <div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-2"></i>{{ error }}<button class="btn-close" data-bs-dismiss="alert"></button></div>
+  {% endif %}
+
+  <div class="predictive-shell fade-in-up">
+
+    <!-- HERO -->
+    <div class="hero-band">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <h1><i class="bi bi-graph-up-arrow me-2"></i>Analítica Predictiva por Parámetro</h1>
+          <p>Proyección de cada parámetro con valor y fecha — coloreado por nivel de alerta.</p>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light btn-sm" id="btn-historial"><i class="bi bi-clock-history me-1"></i>Historial</button>
+          <a href="/kpi-kgi" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-3 p-lg-4">
+      <div id="message-box" class="alert d-none mb-3" role="alert"></div>
+
+      <!-- ══════════════ WIZARD ══════════════ -->
+      <!-- STEP 1 -->
+      <div class="d-flex align-items-start gap-2 mb-1" id="step1-wrapper">
+        <div class="d-flex flex-column align-items-center">
+          <div class="step-badge active" id="badge-1">1</div>
+          <div class="connector mt-1"></div>
+        </div>
+        <div class="flex-grow-1 mb-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="step-title mb-2">Definir parámetros de análisis</div>
+            <button id="btn-edit-params" class="btn btn-outline-secondary btn-sm d-none">
+              <i class="bi bi-pencil me-1"></i>Editar parámetros
+            </button>
+          </div>
+          <div class="wizard-step" id="step1-box">
+            <div class="row g-3">
+              <div class="col-12 col-md-6 col-xl-3">
+                <label class="form-label mb-1 fw-semibold">Tramo</label>
+                <select id="f-tramo" class="form-select form-select-sm">
+                  <option value="">— Selecciona tramo —</option>
+                  {% for t in tramos %}
+                  <option value="{{ t }}" {% if t == selected_tramo %}selected{% endif %}>{{ t }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12 col-md-6 col-xl-2">
+                <label class="form-label mb-1 fw-semibold">Vía</label>
+                <select id="f-via" class="form-select form-select-sm">
+                  <option value="">— Selecciona vía —</option>
+                  {% for v in vias %}
+                  <option value="{{ v }}" {% if v == selected_via %}selected{% endif %}>{{ v }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-6 col-md-3 col-xl-2">
+                <label class="form-label mb-1 fw-semibold">PK inicial <span class="text-muted fw-normal">(km)</span></label>
+                <input id="f-pk-min" type="number" step="0.001" min="0" class="form-control form-control-sm" placeholder="Ej: 10.000" value="{{ selected_pk_min }}">
+              </div>
+              <div class="col-6 col-md-3 col-xl-2">
+                <label class="form-label mb-1 fw-semibold">PK final <span class="text-muted fw-normal">(km)</span></label>
+                <input id="f-pk-max" type="number" step="0.001" min="0" class="form-control form-control-sm" placeholder="Ej: 20.000" value="{{ selected_pk_max }}">
+              </div>
+              <div class="w-100"></div>
+              <div class="col-6 col-md-3 col-xl-2">
+                <label class="form-label mb-1 fw-semibold">Fecha inicio</label>
+                <input id="f-fecha-inicio" type="date" class="form-control form-control-sm" value="{{ selected_fecha_inicio }}">
+              </div>
+              <div class="col-6 col-md-3 col-xl-2">
+                <label class="form-label mb-1 fw-semibold">Fecha fin</label>
+                <input id="f-fecha-fin" type="date" class="form-control form-control-sm" value="{{ selected_fecha_fin }}">
+              </div>
+              <div class="col-12 d-flex justify-content-end">
+                <button id="btn-step1" class="btn btn-primary btn-sm px-4">
+                  Siguiente — Configurar predicción <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="d-flex align-items-start gap-2 mb-4" id="step2-wrapper">
+        <div class="d-flex flex-column align-items-center">
+          <div class="step-badge" id="badge-2">2</div>
+          <div class="connector mt-1" style="visibility:hidden"></div>
+        </div>
+        <div class="flex-grow-1 ms-2">
+          <div class="step-title mb-2">Configurar predicción</div>
+          <div class="wizard-step step-locked" id="step2-box">
+            <!-- Dos bloques de cálculo -->
+            <div class="row g-3">
+              <div class="col-12 col-lg-6">
+                <div class="calc-block calc-block-primary h-100">
+                  <div class="d-flex align-items-start gap-2 mb-2">
+                    <i class="bi bi-graph-up-arrow calc-icon"></i>
+                    <div>
+                      <h6 class="mb-1 fw-semibold">Predicción con fecha</h6>
+                      <p class="text-muted small mb-0">Proyección de cada parámetro hasta la fecha seleccionada, organizada por categorías.</p>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <label class="form-label fw-semibold mb-1 small">Fecha hasta la que quieres predecir</label>
+                    <input id="f-fecha-pred" type="date" class="form-control form-control-sm">
+                    <div id="fecha-pred-error" class="text-danger small mt-1 d-none">
+                      <i class="bi bi-exclamation-circle me-1"></i>La fecha debe ser posterior a hoy.
+                    </div>
+                    <div class="text-muted small mt-1" id="horizon-days-label"></div>
+                  </div>
+                  <div class="mt-2">
+                    <input id="f-nota-hist" type="text" class="form-control form-control-sm"
+                      placeholder="Nota opcional para el historial (ej: revisión mensual)">
+                  </div>
+                  <button id="btn-calcular" class="btn btn-primary w-100 mt-2">
+                    <i class="bi bi-activity me-1"></i>Calcular predicción
+                  </button>
+                  <span id="loading-pred" class="text-muted small d-none mt-2 d-block">
+                    <span class="spinner-border spinner-border-sm me-1"></span>Calculando predicción...
+                  </span>
+                </div>
+              </div>
+              <div class="col-12 col-lg-6">
+                <div class="calc-block calc-block-warning h-100">
+                  <div class="d-flex align-items-start gap-2 mb-2">
+                    <i class="bi bi-clock-history calc-icon"></i>
+                    <div>
+                      <h6 class="mb-1 fw-semibold">Incidencias futuras</h6>
+                      <p class="text-muted small mb-0">Cuándo se superarán los umbrales N1-N4 según la tendencia actual de los indicadores geométricos. Se calcula desde la fecha de hoy.</p>
+                    </div>
+                  </div>
+                  <div class="mt-auto">
+                    <input id="f-nota-prev" type="text" class="form-control form-control-sm mb-2"
+                      placeholder="Nota opcional para el historial (ej: revisión mensual)">
+                    <button id="btn-prevision" class="btn btn-warning w-100">
+                      <i class="bi bi-clock me-1"></i>Calcular incidencias futuras
+                    </button>
+                  </div>
+                  <span id="loading-prev" class="text-muted small d-none mt-2 d-block">
+                    <span class="spinner-border spinner-border-sm me-1"></span>Calculando incidencias futuras...
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ RESULTS ══════════════ -->
+      <div id="results-section">
+
+        <!-- Summary bar -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 p-2 rounded-3" style="background:#f0f5ff;border:1px solid #c7d9f8">
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="fw-semibold text-primary" id="res-tramo-via">—</span>
+            <span class="info-pill" id="res-pk-range">—</span>
+            <span class="info-pill" id="res-fecha-range">—</span>
+          </div>
+          <div class="d-flex gap-2 align-items-center">
+            <span class="text-muted small" id="res-dias-proy">—</span>
+            <span class="text-muted small" id="res-fecha-calculo"></span>
+          </div>
+        </div>
+
+        <!-- ── Category tabs (generated by JS) ── -->
+        <div id="prediction-view">
+          <ul class="nav cat-tab-nav" id="cat-tab-nav" role="tablist"></ul>
+          <div class="tab-content border border-top-0 rounded-bottom p-3 bg-white mb-3" id="cat-tab-content"></div>
+          <p class="text-end" style="font-size:.78rem;margin-top:-.5rem;color:#5a7fa8;font-weight:600">
+            <i class="bi bi-cursor-text me-1"></i>Pasa el cursor sobre los valores para ver más detalles
+          </p>
+        </div>
+
+        <!-- ── Vista exclusiva: tabla de incidencias futuras ── -->
+        <div id="prevision-only-view" class="d-none">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-warning bg-opacity-10 fw-semibold d-flex align-items-center gap-2">
+              <i class="bi bi-clock-history" style="color:#c87b00"></i>
+              <span>Previsión de incidencias futuras — días hasta superar cada umbral</span>
+            </div>
+            <div class="card-body" id="prevision-only-body"></div>
+          </div>
+        </div>
+
+      </div><!-- /results-section -->
+    </div><!-- /p-3 -->
+  </div><!-- /shell -->
+</div><!-- /container -->
+
+<!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+<script>
+const initialPayload = JSON.parse('{{ predictive_data_json|escapejs }}');
+
+/* ── DOM refs ── */
+const fTramo        = document.getElementById("f-tramo");
+const fVia          = document.getElementById("f-via");
+const fPkMin        = document.getElementById("f-pk-min");
+const fPkMax        = document.getElementById("f-pk-max");
+const fFechaInicio  = document.getElementById("f-fecha-inicio");
+const fFechaFin     = document.getElementById("f-fecha-fin");
+const fFechaPred    = document.getElementById("f-fecha-pred");
+const horizonDaysLabel = document.getElementById("horizon-days-label");
+const fNotaHist      = document.getElementById("f-nota-hist");
+const fNotaPrev      = document.getElementById("f-nota-prev");
+const btnStep1      = document.getElementById("btn-step1");
+const btnEditParams = document.getElementById("btn-edit-params");
+const btnCalcular   = document.getElementById("btn-calcular");
+const btnPrevision  = document.getElementById("btn-prevision");
+const loadingPred   = document.getElementById("loading-pred");
+const loadingPrev   = document.getElementById("loading-prev");
+const messageBox    = document.getElementById("message-box");
+const step1Box      = document.getElementById("step1-box");
+const step2Box      = document.getElementById("step2-box");
+const badge1        = document.getElementById("badge-1");
+const badge2        = document.getElementById("badge-2");
+const resultsSection= document.getElementById("results-section");
+
+/* ── Fecha predicción ── */
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function horizonFromFecha(fechaStr) {
+  if (!fechaStr) return 0;
+  const today  = new Date(); today.setHours(0, 0, 0, 0);
+  const target = new Date(fechaStr + "T00:00:00");
+  return Math.round((target - today) / 86400000);
+}
+fFechaPred.min = todayStr();
+
+fFechaPred.addEventListener("change", () => {
+  const errEl = document.getElementById("fecha-pred-error");
+  const days  = horizonFromFecha(fFechaPred.value);
+  if (fFechaPred.value && days < 1) {
+    errEl.classList.remove("d-none");
+    horizonDaysLabel.textContent = "";
+  } else {
+    errEl.classList.add("d-none");
+    horizonDaysLabel.textContent = fFechaPred.value
+      ? `(${days} día${days === 1 ? "" : "s"} desde hoy)`
+      : "";
+  }
+});
+
+/* ══════════ WIZARD STEP CONTROL ══════════ */
+function advanceToStep2() {
+  step1Box.classList.remove("step-locked");
+  step1Box.classList.add("step-done");
+  step2Box.classList.remove("step-locked");
+  badge1.classList.add("done");
+  badge1.classList.remove("active");
+  badge2.classList.add("active");
+  btnEditParams.classList.remove("d-none");
+  showMessage("");
+}
+
+function goBackToStep1() {
+  step1Box.classList.remove("step-done");
+  step2Box.classList.add("step-locked");
+  badge1.classList.remove("done");
+  badge1.classList.add("active");
+  badge2.classList.remove("active");
+  badge2.classList.remove("done");
+  btnEditParams.classList.add("d-none");
+  resultsSection.classList.remove("visible");
+  _lastData = null;
+  showMessage("");
+}
+
+function setLoadingPred(on) {
+  loadingPred.classList.toggle("d-none", !on);
+  btnCalcular.disabled = on;
+}
+function setLoadingPrev(on) {
+  loadingPrev.classList.toggle("d-none", !on);
+  btnPrevision.disabled = on;
+}
+
+function showMessage(msg, type="info") {
+  if (!msg) { messageBox.classList.add("d-none"); return; }
+  messageBox.className = `alert alert-${type} mb-3`;
+  messageBox.innerHTML = msg;
+  messageBox.classList.remove("d-none");
+}
+
+/* ── Step 1: Siguiente ── */
+btnStep1.addEventListener("click", () => {
+  const tramo = fTramo.value.trim();
+  const via   = fVia.value.trim();
+  const fi    = fFechaInicio.value.trim();
+  const ff    = fFechaFin.value.trim();
+  if (!tramo || !via) { showMessage("Selecciona <strong>Tramo</strong> y <strong>Vía</strong>.", "warning"); return; }
+  if (!fi || !ff)     { showMessage("Indica las <strong>fechas de inicio y fin</strong> del período.", "warning"); return; }
+  if (fi > ff)        { showMessage("La <strong>fecha de inicio</strong> debe ser anterior a la fecha de fin.", "warning"); return; }
+  advanceToStep2();
+});
+
+/* ── Editar parámetros ── */
+btnEditParams.addEventListener("click", goBackToStep1);
+
+/* ── VIA LOADER ── */
+async function loadViasForTramo(tramoVal, prefer="") {
+  fVia.innerHTML = '<option value="">— Selecciona vía —</option>';
+  if (!tramoVal) return;
+  try {
+    const r = await fetch(`/obtener_vias?tramo=${encodeURIComponent(tramoVal)}`);
+    const d = await r.json();
+    (d.vias || []).forEach(v => {
+      const o = document.createElement("option");
+      o.value = o.textContent = String(v);
+      fVia.appendChild(o);
+    });
+    if (prefer) fVia.value = prefer;
+    else if (fVia.options.length > 1) fVia.selectedIndex = 1;
+  } catch { showMessage("No se pudieron cargar las vías del tramo.", "warning"); }
+}
+fTramo.addEventListener("change", () => loadViasForTramo(fTramo.value));
+
+/* ══════════ HELPERS ══════════ */
+function safeKey(k) { return String(k).replace(/[^a-zA-Z0-9_]/g, "_"); }
+
+const N_CFG = {
+  0: { label: "Normal",    color: "#11663a", bg: "#eafaf5", border: "#2a9d8f" },
+  1: { label: "Vigilancia",color: "#8a5a00", bg: "#fff8ea", border: "#e8a838" },
+  2: { label: "Alto",      color: "#8a2400", bg: "#fff3ee", border: "#e76f51" },
+  3: { label: "Crítico",   color: "#7b241c", bg: "#fde8e8", border: "#c0392b" },
+  4: { label: "Crítico",   color: "#6b0000", bg: "#ffe8e8", border: "#9b2226" },
+};
+
+const tooltipAttrs = (text) => ` data-bs-toggle="tooltip" title="${text}"`;
+
+function nBadgeHtml(n) {
+  const c = N_CFG[n] || N_CFG[0];
+  const tips = {
+    0: "N0 — Normal: dentro del margen operativo",
+    1: "N1 — Vigilancia: seguimiento recomendado",
+    2: "N2 — Alto: actuación prioritaria",
+    3: "N3 — Crítico: requiere actuación inmediata",
+    4: "N4 — Crítico: requiere actuación inmediata",
+  };
+  const badgeLabel = n === 0 ? c.label : `(N${n}) ${c.label}`;
+  return `<span class="n-badge" style="background:${c.bg};border-color:${c.border};color:${c.color}"${tooltipAttrs(tips[n] || "Nivel de alerta según umbrales")}>${badgeLabel}</span>`;
+}
+
+function trendIcon(t, clave) {
+  // Para altura_LAC: bajar es malo (rojo), subir es bueno (verde)
+  // Para el resto: subir es malo (rojo), bajar es bueno (verde)
+  const invertido = (clave === "altura_LAC");
+  if (t === "creciente" || t === "subida")
+    return invertido
+      ? '<span class="trend-down"><i class="bi bi-arrow-up"></i></span>'
+      : '<span class="trend-up"><i class="bi bi-arrow-up"></i></span>';
+  if (t === "decreciente" || t === "bajada")
+    return invertido
+      ? '<span class="trend-up"><i class="bi bi-arrow-down"></i></span>'
+      : '<span class="trend-down"><i class="bi bi-arrow-down"></i></span>';
+  return '<span class="trend-flat"><i class="bi bi-dash"></i></span>';
+}
+
+function formatDate(d) {
+  if (!d || d === "—") return "—";
+  try { return new Date(d + "T00:00:00").toLocaleDateString("es-ES", {day:"2-digit", month:"2-digit", year:"numeric"}); }
+  catch { return d; }
+}
+
+function confianzaBadge(nivel) {
+  if (nivel === "alta") return `<span style="color:#11663a"${tooltipAttrs("Alta confianza: ≥30 días de datos históricos")}><i class="bi bi-check-circle-fill"></i> Confianza: Alta</span>`;
+  if (nivel === "media") return `<span style="color:#8a5a00"${tooltipAttrs("Confianza media: 7-30 días de datos")}><i class="bi bi-exclamation-circle"></i> Confianza: Media</span>`;
+  if (nivel === "baja") return `<span style="color:#6b0000"${tooltipAttrs("Baja confianza: <7 días de datos. Las proyecciones pueden ser imprecisas")}><i class="bi bi-x-circle"></i> Confianza: Baja</span>`;
+  return '<span class="text-muted">—</span>';
+}
+
+/* ══════════ SKELETON LOADER ══════════ */
+function showSkeleton(n = 6) {
+  const nav     = document.getElementById("cat-tab-nav");
+  const content = document.getElementById("cat-tab-content");
+  nav.innerHTML = "";
+  content.innerHTML = `
+    <div class="row g-3 row-cols-1 row-cols-md-2 row-cols-xl-3 mt-1">
+      ${Array.from({length: n}, () => `
+        <div class="col">
+          <div class="skeleton-card">
+            <div class="skeleton-block mb-3" style="height:14px;width:60%"></div>
+            <div class="skeleton-block mb-2" style="height:10px;width:40%"></div>
+            <div class="skeleton-block mb-3" style="height:36px;width:50%;margin:0 auto"></div>
+            <div class="skeleton-block mb-2" style="height:22px;width:35%;margin:0 auto"></div>
+            <div class="skeleton-block"       style="height:10px;width:55%;margin:0 auto"></div>
+          </div>
+        </div>`).join("")}
+    </div>`;
+  resultsSection.classList.add("visible");
+  showPredictionView();
+}
+
+
+function buildCategoryTabs(data) {
+  const nav     = document.getElementById("cat-tab-nav");
+  const content = document.getElementById("cat-tab-content");
+  nav.innerHTML     = "";
+  content.innerHTML = "";
+
+  const categorias = data.categorias || [];
+
+  categorias.forEach((cat, idx) => {
+    const isFirst = idx === 0;
+    const catKey  = safeKey(cat.nombre);
+
+    const li = document.createElement("li");
+    li.className = "nav-item";
+    li.innerHTML = `<button class="nav-link${isFirst ? " active" : ""}" id="ctab-btn-${catKey}"
+      data-bs-toggle="tab" data-bs-target="#ctab-${catKey}" type="button" role="tab">
+      <i class="${cat.icono || "bi bi-pie-chart"} me-1"></i>${cat.nombre}
+    </button>`;
+    nav.appendChild(li);
+
+    const pane = document.createElement("div");
+    pane.id        = `ctab-${catKey}`;
+    pane.className = `tab-pane fade${isFirst ? " show active" : ""}`;
+    pane.role      = "tabpanel";
+
+    let html = `<div class="cat-header d-flex justify-content-between align-items-center">
+      <h3><i class="${cat.icono || "bi bi-pie-chart"} me-2"></i>${cat.nombre}</h3>
+      <small>Modelo: ${cat.modelo || "—"}</small>
+    </div>`;
+
+    if (!cat.indicadores || cat.indicadores.length === 0) {
+      html += `<p class="text-muted text-center py-4">Sin datos para esta categoría.</p>`;
+    } else {
+      // Elegir columnas según el número de indicadores
+      const n = cat.indicadores.length;
+      let colClass = "row-cols-1";
+      if (n === 1) colClass = "row-cols-1";
+      else if (n === 2) colClass = "row-cols-1 row-cols-md-2";
+      else if (n <= 4) colClass = "row-cols-1 row-cols-md-2 row-cols-xl-3";
+      else colClass = "row-cols-1 row-cols-md-2 row-cols-xl-3 row-cols-xxl-4";
+      html += `<div class="row g-3 ${colClass}">`;
+      cat.indicadores.forEach(ind => {
+        html += buildIndicatorCard(ind);
+      });
+      html += `</div>`;
+    }
+
+    pane.innerHTML = html;
+    content.appendChild(pane);
+  });
+
+  if (categorias.length === 0) {
+    content.innerHTML = `<p class="text-muted text-center py-4">No hay datos de proyección disponibles.</p>`;
+  }
+}
+
+function buildIndicatorCard(ind) {
+  const isGeo = ind.unidad === "m" || ind.unidad === "‰/m";
+  const isInc = ind.unidad === "incidencias";
+
+  // Nivel dominante para colorear la tarjeta (borde, badge y valor)
+  let nivelVisual = 0;
+  if (isGeo) {
+    nivelVisual = Math.max(ind.nivel_actual || 0, ind.nivel_proyectado || 0);
+  } else if (isInc) {
+    // Para incidencias usamos la misma fórmula que ya usaba el valor
+    nivelVisual = Math.min(Math.floor((ind.valor_proyectado ?? 0) / 5), 4);
+  }
+  const nc = N_CFG[nivelVisual] || N_CFG[0];
+
+  // Tooltips descriptivos
+  const descTooltip = {
+    "altura_LAC": "Altura del hilo de contacto respecto al carril. Valores bajos = desgaste.",
+    "descentramiento": "Desplazamiento lateral del hilo de contacto respecto al eje de la vía.",
+    "flecha": "Comba inferior del hilo de contacto entre dos puntos de apoyo.",
+    "contraflecha": "Comba superior del hilo de contacto entre dos puntos de apoyo.",
+    "pendiente": "Variación de la pendiente del hilo de contacto a lo largo del tramo.",
+    "variacion_pendiente": "Cambio brusco en la pendiente del hilo de contacto.",
+    "inspecciones": "Número acumulado de inspecciones realizadas en el tramo.",
+    "incidencias_totales": "Total de incidencias registradas en el tramo.",
+    "indice_global_geometrico": "Promedio del nivel de severidad de todos los indicadores geométricos. 0=Normal, 4=Crítico.",
+    "Ind_KG1": "Índice de Calidad de Geometría ADIF (0-10). Se calcula a partir de las incidencias KPIT1-4 ponderadas por gravedad y km auscultados. Mayor valor = mejor estado. Proyectado con ARIMA desde serie temporal mensual.",
+    "Ind_KG2": "Índice de Estado de Compensación ADIF (0-10). Evalúa flecha, contraflecha y efecto tijera. Mayor valor = mejor compensación.",
+    "Ind_KG": "Índice Global de Calidad de Catenaria. Media de KG1 y KG2. Indicador sintético del estado general de la catenaria. Proyectado con ARIMA.",
+    "KPIT1": "Incidencias por altura del hilo de contacto fuera de rango.",
+    "KPIT2": "Incidencias por descentramiento del hilo de contacto.",
+    "KPIT3": "Incidencias por pendiente o variación de pendiente.",
+    "KPIT4": "Incidencias por flecha o contraflecha anómalas.",
+    "KPIT5": "Incidencias por efecto tijera en zonas de solape.",
+    "KPIT6": "Incidencias por otras causas no clasificadas.",
+  };
+  const desc = descTooltip[ind.clave] || `Proyección del indicador ${ind.nombre}`;
+
+  let valueHtml = "";
+  if (isInc) {
+    const nProy = Math.min(Math.floor((ind.valor_proyectado ?? 0) / 5), 4);
+    const npc = N_CFG[nProy] || N_CFG[0];
+    // Detectar si es operativo (inspecciones o incidencias_totales) para ocultar histórico
+    const isOp = ind.clave === "inspecciones" || ind.clave === "incidencias_totales";
+    const historicoHtml = isOp ? "" : `<span class="info-pill"${tooltipAttrs("Total de registros históricos de este tipo de incidencia")}>Histórico: ${ind.total_historico ?? 0}</span>`;
+    valueHtml = `
+      <div class="text-center my-2">
+        <div class="ind-value-lg" style="color:${npc.color}"${tooltipAttrs(`Proyección para ${formatDate(ind.fecha_proyectada)}. Patrón: ${ind.patron || "automático"} · Densidad: ${ind.densidad ? (ind.densidad*100).toFixed(0)+"%" : "—"} · Tasa: ${ind.tasa_diaria ? Number(ind.tasa_diaria).toFixed(4) : "—"}/día`)}>${ind.valor_proyectado ?? "—"}</div>
+        <div class="ind-date">${ind.unidad} · ${formatDate(ind.fecha_proyectada)}</div>
+      </div>
+      <div class="d-flex justify-content-center gap-2 mt-1">
+        ${historicoHtml}
+        <span>${confianzaBadge(ind.confianza)}</span>
+      </div>`;
+  } else {
+    // Usar nivelVisual (max de actual y proyectado) para que badge, color y borde sean coherentes
+    valueHtml = `
+      <div class="text-center my-2">
+        <div class="ind-value-lg" style="color:${nc.color}"${tooltipAttrs(`Valor proyectado de ${ind.nombre} para ${formatDate(ind.fecha_proyectada)}. Obtenido por ${ind.modelo || "regresión lineal"}.`)}>
+          ${ind.valor_proyectado ?? "—"}
+          <small style="color:${nc.color};font-size:.8rem;font-weight:600"${tooltipAttrs("Unidad de medida")}>${ind.unidad}</small>
+        </div>
+        <div class="mt-1">${ind.clave === "inspecciones" ? "" : nBadgeHtml(nivelVisual)}</div>
+        <div class="ind-date mt-1"${tooltipAttrs("Fecha estimada para el valor proyectado")}>${formatDate(ind.fecha_proyectada)}</div>
+      </div>
+      <div class="d-flex justify-content-center gap-3 mt-2 pt-2" style="border-top:1px solid #eef2f7">
+        <span class="ind-date"${tooltipAttrs("Dirección de la tendencia: ↑ creciente (empeora) · ↓ decreciente (mejora) · → estable")}>${trendIcon(ind.tendencia, ind.clave)} ${ind.tendencia}</span>
+        ${ind.r2 ? `<span class="ind-date"${tooltipAttrs("R²: Coeficiente de determinación (0 a 1). Mide qué tan bien se ajusta el modelo a los datos históricos. >0.7 = buen ajuste.")}>R² ${ind.r2}${Number(ind.r2) < 0.3 ? ' <span style="color:#c87b00" data-bs-toggle="tooltip" title="R² bajo — el modelo se ajusta débilmente a los datos históricos. La proyección es orientativa."><i class="bi bi-exclamation-triangle-fill"></i></span>' : ''}</span>` : ""}
+      </div>`;
+  }
+
+  return `<div class="col">
+    <div class="ind-card has-alert" style="border-left-color:${nc.color};border-color:${nc.border}">
+      <div class="ind-name"${tooltipAttrs(desc)}>${ind.nombre}</div>
+      <span class="ind-model">${ind.clave} · ${ind.unidad}</span>
+      ${valueHtml}
+    </div>
+  </div>`;
+}
+
+/* ══════════ SUMMARY BAR ══════════ */
+function updateSummaryBar(data, formState) {
+  const tramo = data.tramo || formState.tramo || "—";
+  const via   = data.via   || formState.via   || "—";
+  document.getElementById("res-tramo-via").textContent = `Tramo ${tramo} · Vía ${via}`;
+  const pkMin = formState.pkMin, pkMax = formState.pkMax;
+  document.getElementById("res-pk-range").innerHTML = (pkMin || pkMax)
+    ? `<strong>PK:</strong> ${pkMin ?? "inicio"} → ${pkMax ?? "fin"}`
+    : "Sin filtro PK";
+  const fi = formState.fechaInicio, ff = formState.fechaFin;
+  document.getElementById("res-fecha-range").innerHTML = (fi && ff)
+    ? `<strong>Período:</strong> ${fi} → ${ff}`
+    : "Período no definido";
+  document.getElementById("res-dias-proy").textContent = `Horizonte: ${data.dias_proyeccion || "—"} días`;
+  if (data.fecha_proyectada) {
+    document.getElementById("res-fecha-calculo").textContent = `· Hasta: ${formatDate(data.fecha_proyectada)}`;
+  }
+}
+
+/* ══════════ MAIN RENDER ══════════ */
+function showPredictionView() {
+  document.getElementById("prediction-view").classList.remove("d-none");
+  document.getElementById("prevision-only-view").classList.add("d-none");
+}
+function showPrevisionView() {
+  document.getElementById("prediction-view").classList.add("d-none");
+  document.getElementById("prevision-only-view").classList.remove("d-none");
+}
+
+function renderAll(data, formState={}) {
+  resultsSection.classList.add("visible");
+  updateSummaryBar(data, formState);
+  buildCategoryTabs(data);
+  // Inicializar tooltips de Bootstrap en nuevos elementos
+  document.querySelectorAll("[data-bs-toggle='tooltip']").forEach(el => {
+    try { new bootstrap.Tooltip(el, {trigger:"hover"}); } catch(e) {}
+  });
+
+  if (data.message) {
+    showMessage(`<i class="bi bi-info-circle me-2"></i>${data.message}`, "info");
+  } else {
+    showMessage("");
+  }
+}
+
+/* ══════════ FETCH (compartido por los dos botones) ══════════ */
+function readFormState() {
+  return {
+    tramo: fTramo.value.trim(),
+    via:   fVia.value.trim(),
+    pkMin: fPkMin.value.trim(),
+    pkMax: fPkMax.value.trim(),
+    fi:    fFechaInicio.value.trim(),
+    ff:    fFechaFin.value.trim(),
+    fechaPred: fFechaPred.value.trim(),
+  };
+}
+
+function validateFormState(s, requireFecha=true) {
+  if (!s.tramo || !s.via || !s.fi || !s.ff) {
+    showMessage("Completa el <strong>paso 1</strong> antes de calcular.", "warning");
+    return null;
+  }
+  if (!requireFecha) {
+    // Incidencias futuras: horizonte largo para capturar cualquier cruce de umbral futuro.
+    // No se muestra fecha ni se pide al usuario — la tabla solo muestra días/fechas de cruce.
+    return 3650;
+  }
+  if (!s.fechaPred) {
+    showMessage("Selecciona la <strong>fecha hasta la que quieres predecir</strong> en la tarjeta de Predicción.", "warning");
+    return null;
+  }
+  const horizon = horizonFromFecha(s.fechaPred);
+  if (horizon < 1) {
+    showMessage("La fecha de predicción debe ser <strong>posterior a hoy</strong>.", "warning");
+    return null;
+  }
+  return horizon;
+}
+
+async function fetchPredictiveDataRaw(s, horizon) {
+  let url = `/analitica/predictiva/datos?tramo=${encodeURIComponent(s.tramo)}&via=${encodeURIComponent(s.via)}&horizon_days=${horizon}&fecha_inicio=${encodeURIComponent(s.fi)}&fecha_fin=${encodeURIComponent(s.ff)}`;
+  if (s.pkMin) url += `&pk_min=${encodeURIComponent(s.pkMin)}`;
+  if (s.pkMax) url += `&pk_max=${encodeURIComponent(s.pkMax)}`;
+  const res = await fetch(url);
+  let data;
+  try { data = await res.json(); }
+  catch(e) { throw new Error(`Error del servidor (HTTP ${res.status}).`); }
+  if (!res.ok) throw new Error(data?.error || "No se pudo calcular la predicción.");
+  return data;
+}
+
+/* ── Botón 1: Calcular predicción ── */
+async function calcularPrediccion() {
+  const s = readFormState();
+  const horizon = validateFormState(s);
+  if (horizon === null) return;
+
+  setLoadingPred(true); showMessage(""); showSkeleton(6);
+  let data;
+  try {
+    data = await fetchPredictiveDataRaw(s, horizon);
+  } catch(e) {
+    showMessage(e.message || "No se pudo contactar con el servidor.", "danger");
+    setLoadingPred(false);
+    return;
+  }
+  setLoadingPred(false);
+
+  const formState = { tramo:s.tramo, via:s.via, pkMin:s.pkMin||null, pkMax:s.pkMax||null, fechaInicio:s.fi, fechaFin:s.ff };
+  _lastData = data;
+  try {
+    renderAll(data, formState);
+    showPredictionView();
+  } catch(e) {
+    console.error("[renderAll]", e);
+    showMessage("Error al mostrar los resultados.", "warning");
+  }
+  try { saveHistory(data, formState, horizon, s.fechaPred, fNotaHist ? fNotaHist.value.trim() : ""); }
+  catch(e) { console.warn("[saveHistory]", e); }
+}
+btnCalcular.addEventListener("click", calcularPrediccion);
+
+/* ── Botón 2: Calcular incidencias futuras ── */
+async function calcularIncidenciasFuturas() {
+  const s = readFormState();
+  const horizon = validateFormState(s, /*requireFecha=*/false);
+  if (horizon === null) return;
+
+  setLoadingPrev(true); showMessage("");
+  let data;
+  try {
+    data = await fetchPredictiveDataRaw(s, horizon);
+  } catch(e) {
+    showMessage(e.message || "No se pudo contactar con el servidor.", "danger");
+    setLoadingPrev(false);
+    return;
+  }
+  setLoadingPrev(false);
+
+  const formState = { tramo:s.tramo, via:s.via, pkMin:s.pkMin||null, pkMax:s.pkMax||null, fechaInicio:s.fi, fechaFin:s.ff };
+  _lastData = data;
+  resultsSection.classList.add("visible");
+  updateSummaryBar(data, formState);
+  // En vista de incidencias futuras no se muestra el literal de horizonte
+  document.getElementById("res-dias-proy").textContent = "";
+  document.getElementById("res-fecha-calculo").textContent = "";
+  document.getElementById("prevision-only-body").innerHTML = buildPrevisionHtml(data);
+  showPrevisionView();
+  // Tooltips por si la tabla los lleva
+  document.querySelectorAll("#prevision-only-view [data-bs-toggle='tooltip']").forEach(el => {
+    try { new bootstrap.Tooltip(el, {trigger:"hover"}); } catch(e) {}
+  });
+  try { saveHistory(data, formState, horizon, "", fNotaPrev ? fNotaPrev.value.trim() : "", "incidencias"); }
+  catch(e) { console.warn("[saveHistory]", e); }
+}
+btnPrevision.addEventListener("click", calcularIncidenciasFuturas);
+
+/* ══════════ PREVISIÓN DE INCIDENCIAS FUTURAS ══════════ */
+let _lastData = null;
+
+function buildPrevisionHtml(data) {
+  const geometricos = (data.categorias || []).find(c => c.nombre === "Indicadores Geométricos");
+  if (!geometricos || !geometricos.indicadores) {
+    return '<p class="text-muted mb-0">No hay indicadores geométricos disponibles para la previsión.</p>';
+  }
+
+  const nivelColors = {1: "#c7a600", 2: "#d47100", 3: "#9b2226", 4: "#6b0000"};
+
+  let html = '<div class="table-responsive"><table class="table table-sm table-bordered align-middle mb-0">';
+  html += '<thead class="table-warning"><tr><th>Indicador</th><th>Valor actual</th><th>N1 — Vigilancia</th><th>N2 — Alto</th><th>N3 — Crítico</th><th>N4 — Crítico</th></tr></thead><tbody>';
+
+  let filas = 0;
+  geometricos.indicadores.forEach(ind => {
+    const hoy = new Date();
+    let cells = {1: "—", 2: "—", 3: "—", 4: "—"};
+
+    if (ind.umbrales && Object.keys(ind.umbrales).length > 0) {
+      Object.entries(ind.umbrales).forEach(([nivel, info]) => {
+        const n = parseInt(nivel.replace("N", ""));
+        if (isNaN(n) || n < 1 || n > 4) return;
+        if (info.superado) {
+          // Usar la fecha real en que se cruzó el umbral (viene del backend)
+          const fechaCruce = info.fecha_superado
+            ? (() => { try { return new Date(info.fecha_superado + "T00:00:00").toLocaleDateString("es-ES", {day:"2-digit", month:"2-digit", year:"numeric"}); } catch(e) { return info.fecha_superado; } })()
+            : hoy.toLocaleDateString("es-ES", {day:"2-digit", month:"2-digit", year:"numeric"});
+          const labelCruce = info.superado_desde_inicio
+            ? `Alcanzado (≤${fechaCruce})`
+            : `Alcanzado (${fechaCruce})`;
+          const valAct  = info.valor_actual ?? "—";
+          const umbralN = info.umbral != null ? Number(info.umbral).toFixed(4) : "—";
+          // Rango: entre umbral de este nivel y el umbral del nivel adyacente superior
+          const adjKey  = `N${n - 1}`;
+          const umbralAdj = (n > 1 && ind.umbrales[adjKey]?.umbral != null)
+            ? Number(ind.umbrales[adjKey].umbral).toFixed(4)
+            : null;
+          const rangeStr = umbralAdj != null
+            ? `${valAct} [${Math.min(Number(umbralN), Number(umbralAdj)).toFixed(4)} - ${Math.max(Number(umbralN), Number(umbralAdj)).toFixed(4)}]`
+            : `${valAct} (umbral: ${umbralN})`;
+          cells[n] = `<span style="color:${nivelColors[n]};font-weight:600" data-bs-toggle="tooltip" title="${rangeStr}">${labelCruce}</span>`;
+        } else if (info.dias !== null && info.dias !== undefined) {
+          const fecha = new Date(hoy);
+          fecha.setDate(fecha.getDate() + info.dias);
+          const fecStr = fecha.toLocaleDateString("es-ES", {day:"2-digit", month:"2-digit", year:"numeric"});
+          cells[n] = `${info.dias} días (${fecStr})`;
+        }
+      });
+    }
+
+    html += `<tr>
+      <td><strong>${ind.nombre}</strong><br><small class="text-muted">${ind.clave}</small></td>
+      <td class="text-center fw-bold">${ind.valor_actual ?? "—"} ${ind.unidad}</td>
+      <td class="text-center" style="color:${nivelColors[1]}">${cells[1]}</td>
+      <td class="text-center" style="color:${nivelColors[2]}">${cells[2]}</td>
+      <td class="text-center" style="color:${nivelColors[3]};font-weight:${cells[3] !== "—" ? "600" : "normal"}">${cells[3]}</td>
+      <td class="text-center" style="color:${nivelColors[4]};font-weight:${cells[4] !== "—" ? "600" : "normal"}">${cells[4]}</td>
+    </tr>`;
+    filas++;
+  });
+
+  html += '</tbody></table></div>';
+  if (filas === 0) return '<p class="text-muted mb-0">No hay indicadores con umbrales definidos.</p>';
+  return html;
+}
+
+/* ══════════ HISTORY (localStorage) ══════════ */
+const HISTORY_KEY = "pred_history_v2";
+const HISTORY_MAX = 20;
+
+function loadHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch { return []; } }
+
+function saveHistory(payload, formState, horizon, fechaPred, nota = "", tipo = "prediccion") {
+  const history = loadHistory();
+  const catSummary = (payload.categorias || []).flatMap(c =>
+    (c.indicadores || []).map(ind => ({
+      clave: ind.clave,
+      nombre: ind.nombre,
+      proyectado: ind.valor_proyectado,
+      nivel: ind.nivel_proyectado ?? ind.nivel_actual ?? 0,
+      fecha: ind.fecha_proyectada,
+    }))
+  );
+  const entry = {
+    id:           Date.now(),
+    ts:           new Date().toISOString(),
+    nota:         nota || "",
+    tipo:         tipo,
+    tramo:        formState.tramo,
+    via:          formState.via,
+    pk_min:       formState.pkMin,
+    pk_max:       formState.pkMax,
+    fecha_inicio: formState.fechaInicio,
+    fecha_fin:    formState.fechaFin,
+    horizon_days: horizon,
+    fecha_pred:   fechaPred,
+    param_summary: catSummary,
+  };
+  history.unshift(entry);
+  if (history.length > HISTORY_MAX) history.pop();
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  renderHistoryPanel();
+}
+
+function renderHistoryPanel() {
+  const body    = document.getElementById("hist-body");
+  const empty   = document.getElementById("hist-empty");
+  if (!body || !empty) return;
+  try {
+    const history = loadHistory();
+    if (!history.length) {
+      empty.style.display = "block";
+      body.innerHTML = "";
+      body.appendChild(empty);
+      return;
+    }
+    empty.style.display = "none";
+    body.innerHTML = history.map(e => {
+      const dt  = new Date(e.ts).toLocaleString("es-ES",{dateStyle:"short",timeStyle:"short"});
+      const pk  = (e.pk_min||e.pk_max) ? `PK ${e.pk_min??"—"}→${e.pk_max??"—"}` : "Sin filtro PK";
+      const badges = (e.param_summary||[]).slice(0,5).map(p => {
+        const n = p.nivel ?? p.cur_n ?? 0;
+        const c = N_CFG[n] || N_CFG[0];
+        const name = p.nombre || p.label || p.clave || "—";
+        const val = p.proyectado ?? p.prj_v ?? p.projected_value ?? "—";
+        if (!c) return '';
+        return `<span class="info-pill" style="background:${c.bg};border-color:${c.border};color:${c.color}">${name}: <strong>${val}</strong></span>`;
+      }).join("");
+      return `<div class="history-item" data-id="${e.id}">
+        <div class="hi-title">${e.nota ? `<span style="color:var(--brand-primary)">${e.nota}</span> — ` : ""}Tramo ${e.tramo} · Vía ${e.via}</div>
+        <div class="hi-meta">${e.fecha_inicio} → ${e.fecha_fin} &nbsp;·&nbsp; ${pk}</div>
+        <div class="hi-meta">${dt} &nbsp;·&nbsp; Hasta: ${e.fecha_pred || "—"}</div>
+        <div class="hi-badges mt-1">${badges}</div>
+      </div>`;
+    }).join("");
+
+  } catch(e) { console.warn("[history] Error:", e); }
+
+  body.querySelectorAll(".history-item").forEach(el => {
+    el.addEventListener("click", async () => {
+      const id    = Number(el.dataset.id);
+      const entry = loadHistory().find(e => e.id === id);
+      if (!entry) return;
+      fTramo.value = entry.tramo;
+      await loadViasForTramo(entry.tramo, entry.via);
+      fPkMin.value = entry.pk_min ?? "";
+      fPkMax.value = entry.pk_max ?? "";
+      fFechaInicio.value = entry.fecha_inicio;
+      fFechaFin.value    = entry.fecha_fin;
+      advanceToStep2();
+      if (entry.fecha_pred) {
+        // Si la fecha original ya pasó, recalcular desde hoy con el mismo horizonte en días
+        const days = horizonFromFecha(entry.fecha_pred);
+        if (days < 1 && entry.horizon_days > 0) {
+          const nuevaFecha = new Date();
+          nuevaFecha.setDate(nuevaFecha.getDate() + entry.horizon_days);
+          fFechaPred.value = nuevaFecha.toISOString().split("T")[0];
+        } else {
+          fFechaPred.value = entry.fecha_pred;
+        }
+        const diasEfectivos = horizonFromFecha(fFechaPred.value);
+        horizonDaysLabel.textContent = diasEfectivos > 0 ? `(${diasEfectivos} día${diasEfectivos === 1 ? "" : "s"} desde hoy)` : "";
+      }
+      closeHistory();
+      if (entry.tipo === "incidencias") {
+        showMessage("⏳ Recuperando consulta de incidencias...", "info");
+        calcularIncidenciasFuturas();
+      } else {
+        // Calcular automáticamente (vía ya cargada)
+        showMessage("⏳ Recuperando consulta...", "info");
+        calcularPrediccion();
+      }
+    });
+  });
+}
+
+function openHistory()  { document.getElementById("hist-panel").classList.add("open"); document.getElementById("hist-backdrop").classList.add("open"); renderHistoryPanel(); }
+function closeHistory() { document.getElementById("hist-panel").classList.remove("open"); document.getElementById("hist-backdrop").classList.remove("open"); }
+
+document.getElementById("btn-historial").addEventListener("click",  openHistory);
+document.getElementById("hist-close").addEventListener("click",     closeHistory);
+document.getElementById("hist-backdrop").addEventListener("click",  closeHistory);
+document.getElementById("hist-clear").addEventListener("click", () => {
+  if (confirm("¿Eliminar todo el historial?")) {
+    localStorage.removeItem(HISTORY_KEY);
+    renderHistoryPanel();
+  }
+});
+
+/* ══════════ INIT ══════════ */
+// Paso 1 siempre desbloqueado al cargar la página.
+// Si el servidor mandó datos iniciales, los pintamos como referencia
+// pero NO bloqueamos el paso 1 (el usuario decide cuándo avanzar).
+if (initialPayload && initialPayload.message) {
+  showMessage(`<i class="bi bi-info-circle me-2"></i>${initialPayload.message}`, "info");
+}
+
+renderHistoryPanel();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>

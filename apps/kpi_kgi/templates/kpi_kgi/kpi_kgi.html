@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistemas de KPI / KGI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="shortcut icon" href="/img/logo.png" type="image/x-icon">
+  <style>
+    .nav-link:hover { transform: scale(1.1); transition: transform 0.3s linear; }
+    .btn-primary:hover { background-color: #004494; border-color: #004494; }
+    .card:hover { transform: scale(1.02); transition: transform 0.3s linear; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15); }
+  </style>
+</head>
+<body class="bg-light">
+    {% include "core/_nav.html" %}
+
+  <div class="container py-5">
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+      {{ error }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="d-flex align-items-center gap-2 mb-5">
+      <span style="width:120px"></span>
+      <h1 class="h1 text-center mb-0 flex-grow-1">Sistemas de KPI / KGI</h1>
+      <a href="/entrada" class="btn btn-primary btn-sm"><i class="bi bi-arrow-left me-1"></i>Volver Atrás</a>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-md-6 mb-4">
+        <div class="card h-100 text-center border-0 shadow">
+          <div class="card-body d-flex flex-column">
+            <i class="bi bi-graph-up-arrow display-4 text-primary mb-3"></i>
+            <h5 class="card-title">KPIs / Indicadores</h5>
+            <p class="card-text">Visualiza y analiza los principales indicadores.</p>
+            <a href="/filtros" class="btn btn-primary w-100 mt-auto">Ver KPIs / Indicadores</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-4">
+        <div class="card h-100 text-center border-0 shadow">
+          <div class="card-body d-flex flex-column">
+            <i class="bi bi-graph-up display-4 text-primary mb-3"></i>
+            <h5 class="card-title">Analítica Predictiva</h5>
+            <p class="card-text">Accede a la vista de análisis orientada a predicción de tendencias.</p>
+            <a href="/analitica/predictiva" class="btn btn-primary w-100 mt-auto">Ir a Analítica Predictiva</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>

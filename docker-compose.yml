@@ -1,0 +1,31 @@
+services:
+  catenaria-django:
+    build: .
+    container_name: catenaria_django
+    restart: always
+    env_file:
+      - entorno.env
+    volumes:
+      # Mantiene el código de la carpeta actual donde haces el git pull
+      - .:/app
+    networks:
+      - traefik_public
+      - catenaria_db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.catenaria.rule=Host(`catenaria.local.test`) || Host(`catenaria.catenaria-lab.com`)"
+      - "traefik.http.routers.catenaria.entrypoints=web"
+      - "traefik.http.services.catenaria.loadbalancer.server.port=8000"
+      - "traefik.docker.network=traefik_public"
+
+# Nota: Postgres y Grafana ya corren como stacks independientes
+# (/opt/docker/postgres/ y /opt/docker/grafana/ en la VM), conectados
+# a estas mismas redes Docker. Por eso no se repiten aquí: si se
+# volvieran a declarar con el mismo container_name, Docker daría un
+# error de conflicto al intentar levantar los dos a la vez.
+
+networks:
+  traefik_public:
+    external: true
+  catenaria_db:
+    external: true
